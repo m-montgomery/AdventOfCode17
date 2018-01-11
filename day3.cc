@@ -20,9 +20,27 @@ While this is very space-efficient (no squares are skipped), requested data must
 For example: Data from square 1 is carried 0 steps, since it's at the access port. Data from square 12 is carried 3 steps, such as: down, left, left. Data from square 23 is carried only 2 steps: up twice. Data from square 1024 must be carried 31 steps.
 
 How many steps are required to carry the data from the square identified in your puzzle input all the way to the access port?
+
+--- Part Two ---
+
+As a stress test on the system, the programs here clear the grid and then store the value 1 in square 1. Then, in the same allocation order as shown above, they store the sum of the values in all adjacent squares, including diagonals.
+
+So, the first few squares' values are chosen as follows: Square 1 starts with the value 1. Square 2 has only one adjacent filled square (with value 1), so it also stores 1. Square 3 has both of the above squares as neighbors and stores the sum of their values, 2. Square 4 has all three of the aforementioned squares as neighbors and stores the sum of their values, 4. Square 5 only has the first and fourth squares as neighbors, so it gets the value 5.
+
+Once a square is written, its value does not change. Therefore, the first few squares would receive the following values:
+
+147  142  133  122   59
+304    5    4    2   57
+330   10    1    1   54
+351   11   23   25   26
+362  747  806--->   ...
+
+What is the first value written that is larger than your puzzle input?
 */
 #include <iostream>
 #include <math.h>
+#include <unordered_map>
+
 
 // NEAREST SQUARE
 // IN:  Integer z
@@ -86,6 +104,75 @@ int stepsToPort(int x, int y) {
   return abs(x) + abs(y);
 }
 
+// PAIR HASH
+// Defined to allow use of pairs as keys in unordered_map
+struct pairHash {
+public:
+  template <typename first, typename second>
+  std::size_t operator()(const std::pair<first, second> &val) const {
+    return std::hash<first>()(val.first) ^ std::hash<second>()(val.second);
+  }
+};
+
+// FIND LARGER
+// IN:  Integer x
+// OUT: First value in sum spiral grid > x
+int findLarger(int value) {
+
+  // init grid: key = pair of grid coords; val = value at x,y
+  std::unordered_map<std::pair<int, int>, int, pairHash> grid;
+  grid[std::make_pair(0,0)] = 1;  // add center value
+
+  // set up movement
+  int step = 1;          // steps to next corner
+  int curr = 1;          // current value
+  int x = 0;             // current coordinates
+  int y = 0;
+
+  // set up directions
+  // dx, dy: 0,1 (right) -1,0 (up) 0,-1 (left) 1,0 (down)
+  int dir = 0;              // begin moving right
+  int dx[] = {0, -1, 0, 1};
+  int dy[] = {1, 0, -1, 0};
+  
+  // build the spiral until found larger value
+  while (curr <= value) {
+
+    // while not turning a corner
+    for (int i = 0; i < step; i++) {
+
+      // take a step
+      x += dx[dir];
+      y += dy[dir];
+      
+      // sum surrounding spots
+      curr = 0;
+      for (int adjX = -1; adjX <= 1; adjX++) {    // for every adjacent x
+	for (int adjY = -1; adjY <= 1; adjY++) {  // for every adjacent y
+	  if (adjX == 0 && adjY == 0)             // (don't check self)
+	    continue;
+
+	  // if grid contains coords (adjX, adjY), add value to sum
+	  std::pair<int, int> key = std::make_pair(x+adjX, y+adjY);
+	  if (grid.count(key) != 0)
+	    curr += grid.find(key)->second;       // get value from iterator
+	}
+      }
+      
+      // handle newly calculated spot
+      grid[std::make_pair(x,y)] = curr;   // add value to grid
+      if (curr > value)                   // check for completion
+	return curr;
+    }
+
+    // increase step before moving across (right or left)
+    if (dir % 2 == 1)
+      step++;
+    dir = (dir + 1) % 4; // change direction
+  }
+  return curr;
+}
+
 // MAIN
 // IN:  Integer value
 // OUT: Steps to port (value 1) in spiral grid
@@ -108,6 +195,12 @@ int main() {
   // display steps from value to port
   int steps = stepsToPort(x, y);
   std::cout << "Steps: " << steps << std::endl;
+
+
+  // PART TWO
+
+  int larger = findLarger(input);
+  std::cout << "Larger: " << larger << std::endl;  
 
   return 0;
 }
