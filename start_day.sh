@@ -55,7 +55,7 @@ else
 
     # init java class
     if [[ "$name" =~ \.java$ ]]; then
-	day=$(echo "$name" | sed 's/\(day[0-9][0-9]*\).*/\1/')   # remove ext
+	day=$(echo "$name" | sed 's/\([^\.]*\)\..*/\1/')   # remove ext
 	echo -e "\npublic class $day {" >> $filename
 	echo -e "    public static void main(String[] args) {" >> $filename
 	echo -e "    \n    }\n}" >> $filename
