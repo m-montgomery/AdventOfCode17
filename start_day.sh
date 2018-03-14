@@ -59,6 +59,11 @@ else
 	echo -e "\npublic class $day {" >> $filename
 	echo -e "    public static void main(String[] args) {" >> $filename
 	echo -e "    \n    }\n}" >> $filename
+
+    # init c++ skeleton
+    elif [[ "$name" =~ \.cc$ ]]; then
+	echo -e "\n#include <iostream>\n" >> $filename
+	echo -e "int main() {\n  return 0;\n}" >> $filename
     fi
 
     # REPORT COMPLETION AND OPEN
